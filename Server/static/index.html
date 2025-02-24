@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>One-Diagram Approach (No Re-Generation on Transition)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f4ff;
+            margin: 0;
+            padding: 20px;
+        }
+        header {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .controls-container, .result-container {
+            margin-bottom: 20px;
+            width: 80%;
+            text-align: center;
+        }
+        #diagramObject {
+            border: 2px solid black;
+            border-radius: 10px;
+            width: 90%;
+            height: 600px;
+            display: none; /* Скрыто до первого вызова generate-regex */
+        }
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+            margin: 5px;
+        }
+        .result-box {
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            font-family: monospace;
+            white-space: pre-wrap;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <header>Formalne jazyky (Single Diagram with transitions)</header>
+
+    <div class="container">
+        <div class="controls-container">
+            <!-- Ввод регулярки -->
+            <div>
+                <label for="regex-input">Your regular expression:</label>
+                <input type="text" id="regex-input" placeholder="Enter regex">
+                <button id="send-regex-btn">Generate diagram</button>
+            </div>
+
+            <!-- Шаг по символу -->
+            <div id="transition-part" style="display: none;">
+                <label for="transition-input">Transition symbol:</label>
+                <input type="text" id="transition-input" maxlength="1">
+                <button id="send-transition-btn">Step by symbol</button>
+            </div>
+        </div>
+
+        <!-- Место, куда грузим .svg один раз -->
+        <object id="diagramObject" type="image/svg+xml"></object>
+
+        <!-- Результат -->
+        <div class="result-container" id="result-container" style="display: none;">
+            <h2>Result of transition</h2>
+            <div id="result-box" class="result-box">Here will be next state of automata.</div>
+        </div>
+    </div>
+
+    <!-- Подключаем D3.js -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        let currentExpression = "";    // Текущее выражение
+        let currentNeededIds = [];     // Текущие ID для точек
+        let svgDoc = null;            // Документ диаграммы (после загрузки)
+
+        // При клике "Generate diagram"
+        document.getElementById('send-regex-btn').addEventListener('click', async () => {
+            const regex = document.getElementById('regex-input').value.trim();
+            if (!regex) {
+                alert("Введите регулярное выражение!");
+                return;
+            }
+
+            // Посылаем POST /generate-regex
+            const response = await fetch('/generate-regex', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ diagram_data: regex })
+            });
+            if (!response.ok) {
+                alert("Ошибка при генерации диаграммы.");
+                return;
+            }
+            const data = await response.json();
+            // data = { diagram_url, highlight_ids }
+            currentNeededIds = data.highlight_ids || [];
+
+            // Показываем <object> и грузим .svg
+            const objEl = document.getElementById('diagramObject');
+            objEl.style.display = 'block';
+            objEl.data = data.diagram_url;
+
+            // Показываем блок для transition
+            document.getElementById('transition-part').style.display = 'block';
+
+            // Когда .svg загрузится, получим svgDoc и отметим начальные точки
+            objEl.addEventListener('load', function onLoad() {
+                objEl.removeEventListener('load', onLoad);
+                svgDoc = objEl.contentDocument;
+                if (!svgDoc) {
+                    console.log("Не удалось получить contentDocument (CORS?).");
+                    return;
+                }
+                // Рисуем точки (первый раз)
+                redrawHighlights();
+            });
+        });
+
+        // При клике "Step by symbol"
+        document.getElementById('send-transition-btn').addEventListener('click', async () => {
+            const transition = document.getElementById('transition-input').value;
+            if (!transition) {
+                alert("Введите символ перехода!");
+                return;
+            }
+
+            // Посылаем POST /generate-transition
+            const response = await fetch('/generate-transition', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ transition })
+            });
+            if (!response.ok) {
+                alert("Ошибка при шаге.");
+                return;
+            }
+            const data = await response.json();
+            // data = { highlight_ids, updated_regex }
+            currentNeededIds = data.highlight_ids || [];
+            currentExpression = data.updated_regex || "";
+
+            // Обновляем поле результата
+            document.getElementById('result-box').textContent = `New state: ${currentExpression}`;
+            document.getElementById('result-container').style.display = 'block';
+
+            // Стираем старые точки, ставим новые - всё в ТОМ ЖЕ svg
+            redrawHighlights();
+        });
+
+        function redrawHighlights() {
+            if (!svgDoc) return;
+
+            // 1) Удаляем старые точки (которые мы добавляли ранее)
+            //    Обозначим их классом .hl-dot
+            d3.select(svgDoc).selectAll('circle.hl-dot').remove();
+
+            // 2) Для каждого нужного id рисуем новую точку
+            currentNeededIds.forEach(termId => {
+                const g = d3.select(svgDoc).select(`g[id="${termId}"]`);
+                if (!g.empty()) {
+                    const rect = g.select('rect');
+                    if (!rect.empty()) {
+                        const x = +rect.attr('x');
+                        const y = +rect.attr('y');
+                        const h = +rect.attr('height');
+                        const cx = x - 8;         // левее
+                        const cy = y + (h / 2);   // по центру
+                        g.append('circle')
+                            .attr('class', 'hl-dot')   // чтобы потом было легко удалять
+                            .attr('cx', cx)
+                            .attr('cy', cy)
+                            .attr('r', 4)
+                            .attr('fill', 'red');
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
