@@ -187,14 +187,16 @@ class ExpressionParser:
                     else:
                         result_expression = self._back_coma_to_start(result_expression, i)
                         i += 1
-                        result_expression += expression[i]
-                        i += 1
+                        while expression[i] == '}':
+                            result_expression += expression[i]
+                            i += 1
                         result_expression += '.'
                         continue
                 if expression[i] == '.' and expression[i + 1] == '|':
                     result_expression = self._parse_alternative(result_expression, i)
                     i = 0
                     expression = result_expression
+                    self.expression = expression
                     result_expression = ""
                     continue
                 if expression[i + 1] in "([{":
@@ -271,6 +273,9 @@ class ExpressionParser:
                 needed_ids.append(self.list_id[y])
                 i+=2
                 y+=1
+            elif self.expression[i] == '.' and i == len(self.expression)-1:
+                needed_ids.append(100)
+                i+=1
             else:
                 i+=1
                 y+=1
@@ -284,19 +289,19 @@ class ExpressionParser:
 
 
 
-
-parser = ExpressionParser("[abc]abc{abc}", [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38])
-ids = parser.do_cycle('a')
-ids = parser.do_cycle('b')
-ids = parser.do_cycle('c')
-ids = parser.do_cycle('a')
-ids = parser.do_cycle('b')
-ids = parser.do_cycle('c')
-ids = parser.do_cycle('a')
-ids = parser.do_cycle('b')
-ids = parser.do_cycle('c')
-ids = parser.do_cycle('a')
-ids = parser.do_cycle('b')
-ids = parser.do_cycle('c')
-
-print(parser.get_expression())
+#
+# parser = ExpressionParser("{a{a|bcg}}ac", [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38])
+# ids = parser.do_cycle('a')
+# ids = parser.do_cycle('a')
+# ids = parser.do_cycle('b')
+# ids = parser.do_cycle('c')
+# ids = parser.do_cycle('g')
+# ids = parser.do_cycle('c')
+# ids = parser.do_cycle('a')
+# ids = parser.do_cycle('b')
+# ids = parser.do_cycle('c')
+# ids = parser.do_cycle('a')
+# ids = parser.do_cycle('b')
+# ids = parser.do_cycle('c')
+#
+# print(parser.get_expression())

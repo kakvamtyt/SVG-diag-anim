@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 import os
 import uuid
 
-# Ваши импорты из "actual_version" и "Algorithm":
+# Ваши модули:
 from actual_version import generate_svg_from_regex
 from Algorithm import ExpressionParser
 
@@ -26,10 +26,17 @@ def index():
 @app.route('/generate-regex', methods=['POST'])
 def generate_regex():
     """
-    Эндпоинт: принимает JSON {"diagram_data": "регулярка"}.
-    Генерирует .svg ОДИН РАЗ и возвращает:
-      - diagram_url: ссылка на этот .svg
-      - highlight_ids: какие терминалы нужно отметить
+    1) Принимает JSON {"diagram_data": "регулярка"}
+    2) Генерирует .svg (один раз) и сохраняет в папку static/diagrams
+    3) Создаёт парсер ExpressionParser, извлекает:
+       - needed_ids (для кружков)
+       - available_symbols = unique_chars_after_dot() (для заполнения dropdown)
+    4) Возвращает JSON:
+       {
+         diagram_url: "/static/diagrams/....svg"
+         highlight_ids: [...],
+         available_symbols: [...]
+       }
     """
     try:
         data = request.json.get('diagram_data')
@@ -38,21 +45,23 @@ def generate_regex():
 
         global parser, current_expression, needed_ids
 
-        # Генерация .svg (единственный раз)
+        # Генерируем один раз SVG
         filename = f"diagram_{uuid.uuid4().hex}.svg"
         output_file = os.path.join(OUTPUT_DIR, filename)
-        # Это ваша функция, которая строит диаграмму и сохраняет её в файл,
-        # при этом возвращая список ВСЕХ ID терминалов:
         id_list = generate_svg_from_regex(data, output_file=output_file)
 
-        # Создаём парсер, чтобы выяснить, какие ID надо отметить:
+        # Создаём парсер для отслеживания состояния
         parser = ExpressionParser(data, id_list)
         current_expression = parser.get_expression()
         needed_ids = parser.get_ids()
 
+        # Список допустимых символов (чтобы пользователь не вводил неверных)
+        available_symbols = list(parser.unique_chars_after_dot())
+
         return jsonify({
             "diagram_url": f"/static/diagrams/{filename}",
-            "highlight_ids": needed_ids
+            "highlight_ids": needed_ids,
+            "available_symbols": available_symbols
         })
     except Exception as e:
         print("Ошибка:", e)
@@ -62,9 +71,17 @@ def generate_regex():
 @app.route('/generate-transition', methods=['POST'])
 def generate_transition():
     """
-    Эндпоинт для пошаговых переходов:
-    Меняем состояние парсера и ВОЗВРАЩАЕМ новый список needed_ids.
-    Не перегенерируем .svg!
+    1) Принимает {"transition": "символ"}
+    2) Двигает parser по этому символу,
+       - needed_ids = parser.do_cycle(symbol)
+       - current_expression = parser.get_expression()
+    3) Получает новые available_symbols = unique_chars_after_dot()
+    4) Возвращает JSON:
+       {
+         highlight_ids: [...],
+         updated_regex: "...",
+         available_symbols: [...]
+       }
     """
     try:
         symbol = request.json.get('transition', '')
@@ -72,14 +89,17 @@ def generate_transition():
             return jsonify({"error": "No transition provided"}), 400
 
         global parser, current_expression, needed_ids
-        # Меняем состояние
+        # Делаем шаг
         needed_ids = parser.do_cycle(symbol=symbol)
         current_expression = parser.get_expression()
 
-        # Возвращаем ТОЛЬКО новые ID + текущее выражение
+        # Новый набор доступных символов
+        available_symbols = list(parser.unique_chars_after_dot())
+
         return jsonify({
             "highlight_ids": needed_ids,
-            "updated_regex": current_expression
+            "updated_regex": current_expression,
+            "available_symbols": available_symbols
         })
     except Exception as e:
         print("Ошибка:", e)
