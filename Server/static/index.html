@@ -2,79 +2,325 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>One-Diagram with Select Dropdown</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regex Diagram Visualizer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f4ff;
+        :root {
+            --primary: #4361ee;
+            --primary-light: #4895ef;
+            --dark: #2b2d42;
+            --light: #f8f9fa;
+            --success: #06d6a0;
+            --warning: #ffd166;
+            --danger: #ef476f;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --radius: 8px;
+        }
+
+        * {
+            box-sizing: border-box;
             margin: 0;
-            padding: 20px;
+            padding: 0;
         }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+        }
+
         header {
+            background-color: var(--primary);
+            color: white;
+            padding: 1.5rem;
             text-align: center;
-            font-size: 24px;
-            margin-bottom: 20px;
+            box-shadow: var(--shadow);
         }
+
         .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background-color: var(--primary-light);
+            color: white;
+            padding: 1rem 1.5rem;
+            font-weight: 500;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .input-group {
             display: flex;
-            flex-direction: column;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        input, select {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            min-width: 200px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            margin-left: 0.5rem;
+            display: flex;
             align-items: center;
         }
-        .controls-container, .result-container {
-            margin-bottom: 20px;
-            width: 80%;
-            text-align: center;
+
+        button:hover {
+            background-color: var(--primary-light);
+            transform: translateY(-2px);
         }
-        #diagramObject {
-            border: 2px solid black;
-            border-radius: 10px;
-            width: 90%;
-            height: 600px;
-            display: none; /* пока не сгенерируем диаграмму */
+
+        button:active {
+            transform: translateY(0);
         }
-        input, button, select {
-            padding: 10px;
-            font-size: 16px;
-            margin: 5px;
+
+        button i {
+            margin-right: 0.5rem;
         }
+
         .result-box {
-            padding: 10px;
-            border: 1px solid #ccc;
-            background-color: #fff;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: var(--radius);
+            padding: 1rem;
             font-family: monospace;
             white-space: pre-wrap;
-            text-align: left;
+        }
+
+        #diagramObject {
+            width: 100%;
+            height: 500px;
+            border-radius: var(--radius);
+            border: 1px solid #ddd;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--primary-light);
+            color: white;
+            border-radius: 50px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
+        }
+
+        .status-panel {
+            display: flex;
+            align-items: center;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background-color: #e9f5ff;
+            border-left: 4px solid var(--primary);
+            border-radius: 4px;
+            animation: slideIn 0.5s ease;
+        }
+
+        .transition-section {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--light);
+            border-radius: var(--radius);
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid #ddd;
+            transition: all 0.3s ease;
+        }
+
+        .transition-section:hover {
+            border-color: var(--primary-light);
+        }
+
+        .transition-symbol-btn {
+            background-color: var(--light);
+            color: var(--dark);
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 0.5rem 1rem;
+            margin-right: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .transition-symbol-btn:hover {
+            background-color: var(--primary-light);
+            color: white;
+        }
+
+        .transition-symbol-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .two-columns {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .slide-in {
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .pulse {
+            animation: pulse 1.5s infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .two-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .input-group {
+                flex-direction: column;
+            }
+
+            button {
+                margin-left: 0;
+                margin-top: 0.5rem;
+                width: 100%;
+            }
+
+            input, select {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <header>Formalne jazyky — Single Diagram + Dropdown</header>
+    <header>
+        <h1>Regex Diagram Visualizer</h1>
+    </header>
 
     <div class="container">
         <!-- Управление -->
-        <div class="controls-container">
-            <!-- Ввод регулярки и генерация диаграммы -->
-            <div>
-                <label for="regex-input">Your regular expression:</label>
-                <input type="text" id="regex-input" placeholder="Enter regex">
-                <button id="send-regex-btn">Generate diagram</button>
-            </div>
+        <div class="card slide-in">
+            <div class="card-header">Control Panel</div>
+            <div class="card-body">
+                <!-- Ввод регулярки и генерация диаграммы -->
+                <div class="form-group">
+                    <label for="regex-input">Your regular expression:</label>
+                    <div class="input-group">
+                        <input type="text" id="regex-input" placeholder="Enter regex pattern (e.g. abc)">
+                        <button id="send-regex-btn"><i class="fas fa-play"></i> Generate</button>
+                    </div>
+                </div>
 
-            <!-- Шаги по символу -->
-            <div id="transition-part" style="display:none;">
-                <label for="transition-select">Transition symbol:</label>
-                <select id="transition-select"></select>
-                <button id="send-transition-btn">Step by symbol</button>
+                <!-- Current State -->
+                <div id="status-panel" class="status-panel" style="display:none;">
+                    <div>
+                        <strong>Current State:</strong>
+                        <span id="current-regex"></span>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Место, куда загружается диаграмма -->
-        <object id="diagramObject" type="image/svg+xml"></object>
+        <div class="two-columns">
+            <div>
+                <!-- Место, куда загружается диаграмма -->
+                <object id="diagramObject" type="image/svg+xml" style="display:none;"></object>
+            </div>
 
-        <!-- Результат -->
-        <div class="result-container" id="result-container" style="display:none;">
-            <h2>Result of transition</h2>
-            <div id="result-box" class="result-box">State info here</div>
+            <div>
+                <!-- Шаги по символу -->
+                <div id="transition-part" class="card slide-in" style="display:none;">
+                    <div class="card-header">
+                        Transition Steps
+                        <span class="badge" id="available-count">0</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="transition-buttons" class="transition-buttons">
+                            <!-- Transition buttons will be added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -89,181 +335,230 @@
         document.getElementById('send-regex-btn').addEventListener('click', async () => {
             const regexValue = document.getElementById('regex-input').value.trim();
             if (!regexValue) {
-                alert("Введите регулярное выражение!");
+                alert("Please enter a regular expression!");
                 return;
             }
 
-            // Отправляем POST /generate-regex
-            const response = await fetch('/generate-regex', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ diagram_data: regexValue })
-            });
-            if (!response.ok) {
-                alert("Ошибка при генерации диаграммы.");
-                return;
-            }
-            const data = await response.json();
-            // data = { diagram_url, highlight_ids, available_symbols }
-            currentNeededIds = data.highlight_ids || [];
-            updateTransitionSelect(data.available_symbols || []);
+            // Показываем индикатор загрузки
+            document.getElementById('send-regex-btn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            document.getElementById('send-regex-btn').disabled = true;
 
-            const objEl = document.getElementById('diagramObject');
-            objEl.style.display = 'block';
-            objEl.data = data.diagram_url;
+            try {
+                // Отправляем POST /generate-regex
+                const response = await fetch('/generate-regex', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ diagram_data: regexValue })
+                });
 
-            // Когда .svg загрузится
-            objEl.addEventListener('load', function onLoad() {
-                objEl.removeEventListener('load', onLoad);
-                svgDoc = objEl.contentDocument;
-                if (!svgDoc) {
-                    console.log("Не удалось получить contentDocument (CORS?).");
-                    return;
+                if (!response.ok) {
+                    throw new Error('Server error');
                 }
-                // Рисуем точки
-                redrawHighlights();
-            });
 
-            // Показываем панель переходов
-            document.getElementById('transition-part').style.display = 'block';
+                const data = await response.json();
+                // data = { diagram_url, highlight_ids, available_symbols }
+                currentNeededIds = data.highlight_ids || [];
+                updateTransitionButtons(data.available_symbols || []);
+
+                const objEl = document.getElementById('diagramObject');
+                objEl.style.display = 'block';
+                objEl.classList.add('fade-in');
+                objEl.data = data.diagram_url;
+
+                // Когда .svg загрузится
+                objEl.addEventListener('load', function onLoad() {
+                    objEl.removeEventListener('load', onLoad);
+                    svgDoc = objEl.contentDocument;
+                    if (!svgDoc) {
+                        console.error("Failed to get contentDocument (CORS issue?)");
+                        return;
+                    }
+                    // Рисуем точки
+                    redrawHighlights();
+                });
+
+                // Показываем панель переходов и статуса
+                document.getElementById('transition-part').style.display = 'block';
+                document.getElementById('status-panel').style.display = 'flex';
+                document.getElementById('current-regex').textContent = regexValue;
+            } catch (err) {
+                console.error(err);
+                alert("Error generating diagram: " + err.message);
+            } finally {
+                // Восстанавливаем кнопку
+                document.getElementById('send-regex-btn').innerHTML = '<i class="fas fa-play"></i> Generate';
+                document.getElementById('send-regex-btn').disabled = false;
+            }
         });
 
-        // При "Step by symbol"
-        document.getElementById('send-transition-btn').addEventListener('click', async () => {
-            // Берём символ из выпадающего списка
-            const select = document.getElementById('transition-select');
-            const chosenSymbol = select.value;
-            if (!chosenSymbol) {
-                alert("Нет доступных символов для перехода!");
-                return;
-            }
+        // При выборе символа перехода
+        function createTransitionHandler(symbol) {
+            return async function() {
+                // Add active class to clicked button
+                document.querySelectorAll('.transition-symbol-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
 
-            // Отправляем POST /generate-transition
-            const response = await fetch('/generate-transition', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ transition: chosenSymbol })
-            });
-            if (!response.ok) {
-                alert("Ошибка при шаге.");
-                return;
-            }
+                // Processing indicator
+                const originalText = this.textContent;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                this.disabled = true;
 
-            const data = await response.json();
-            // data = { highlight_ids, updated_regex, available_symbols }
-            currentNeededIds = data.highlight_ids || [];
-            currentRegex = data.updated_regex || "";
-            updateTransitionSelect(data.available_symbols || []);
+                try {
+                    // Отправляем POST /generate-transition
+                    const response = await fetch('/generate-transition', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ transition: symbol })
+                    });
 
-            // Обновляем поле результата
-            const resultBox = document.getElementById('result-box');
-            resultBox.textContent = `New state: ${currentRegex}`;
-            document.getElementById('result-container').style.display = 'block';
+                    if (!response.ok) {
+                        throw new Error('Server error');
+                    }
 
-            // Перерисовываем точки (старые стираем, новые ставим)
-            redrawHighlights();
-        });
+                    const data = await response.json();
+                    // data = { highlight_ids, updated_regex, available_symbols }
+                    currentNeededIds = data.highlight_ids || [];
+                    currentRegex = data.updated_regex || "";
+                    updateTransitionButtons(data.available_symbols || []);
 
-        // Заполнение <select> с символами
-        function updateTransitionSelect(symbols) {
-            const select = document.getElementById('transition-select');
-            select.innerHTML = ""; // очистить
+                    // Обновляем поле результата с анимацией
+                    const statusPanel = document.getElementById('status-panel');
+                    statusPanel.style.animation = 'none';
+                    statusPanel.offsetHeight; // Trigger reflow
+                    statusPanel.style.animation = 'pulse 0.5s';
+                    document.getElementById('current-regex').textContent = currentRegex;
+
+                    // Перерисовываем точки (старые стираем, новые ставим)
+                    redrawHighlights();
+                } catch (err) {
+                    console.error(err);
+                    alert("Error during transition: " + err.message);
+                } finally {
+                    // Restore button
+                    this.textContent = originalText;
+                    this.disabled = false;
+                }
+            };
+        }
+
+        // Заполнение кнопками символов
+        function updateTransitionButtons(symbols) {
+            const container = document.getElementById('transition-buttons');
+            container.innerHTML = ""; // очистить
+
+            // Update available count badge
+            document.getElementById('available-count').textContent = symbols.length;
 
             if (symbols.length === 0) {
-                // Если нет возможных переходов, добавим пустую опцию
-                const opt = document.createElement('option');
-                opt.value = "";
-                opt.textContent = "(no transitions)";
-                select.appendChild(opt);
-                select.disabled = true;
+                const message = document.createElement('div');
+                message.textContent = "No transitions available";
+                message.style.padding = "0.5rem";
+                message.style.color = "#777";
+                container.appendChild(message);
             } else {
-                select.disabled = false;
                 symbols.forEach(sym => {
-                    const opt = document.createElement('option');
-                    opt.value = sym;
-                    opt.textContent = sym;
-                    select.appendChild(opt);
+                    const btn = document.createElement('button');
+                    btn.textContent = sym;
+                    btn.className = 'transition-symbol-btn';
+                    btn.addEventListener('click', createTransitionHandler(sym));
+                    container.appendChild(btn);
                 });
             }
         }
 
-function redrawHighlights() {
-    if (!svgDoc) return;
+        function redrawHighlights() {
+            if (!svgDoc) return;
 
-    // 1) Удаляем все старые кружки
-    d3.select(svgDoc).selectAll('circle.hl-dot').remove();
+            // 1) Удаляем все старые кружки
+            d3.select(svgDoc).selectAll('circle.hl-dot').remove();
 
-    // 2) Проходимся по всем neededIds
-    currentNeededIds.forEach(termId => {
+            // Создаем группу, которая будет всегда на переднем плане
+            let dotGroup = d3.select(svgDoc).select('svg').select('g.hl-dot-group');
+            if (dotGroup.empty()) {
+                dotGroup = d3.select(svgDoc).select('svg')
+                  .append('g')
+                  .attr('class', 'hl-dot-group');
+            } else {
+                dotGroup.selectAll('*').remove(); // очищаем перед повторным добавлением
+            }
 
-        if (termId !== 100) {
-            // Обычная логика для "обычных" ID — рисуем точку у <rect> внутри g[id="...]"
-            const g = d3.select(svgDoc).select(`g[id="${termId}"]`);
-            if (!g.empty()) {
-                const rect = g.select('rect');
-                if (!rect.empty()) {
-                    const x = +rect.attr('x');
-                    const y = +rect.attr('y');
-                    const h = +rect.attr('height');
-                    const cx = x - 8;
-                    const cy = y + (h / 2);
-                    g.append('circle')
-                     .attr('class', 'hl-dot')
-                     .attr('cx', cx)
-                     .attr('cy', cy)
-                     .attr('r', 4)
-                     .attr('fill', 'red');
+            // 2) Проходимся по всем neededIds
+            currentNeededIds.forEach(termId => {
+                if (termId !== 100) {
+                    // Обычная логика для "обычных" ID — рисуем точку у <rect> внутри g[id="..."]
+                    const g = d3.select(svgDoc).select(`g[id="${termId}"]`);
+                    if (!g.empty()) {
+                        const rect = g.select('rect');
+                        if (!rect.empty()) {
+                            const x = +rect.attr('x');
+                            const y = +rect.attr('y');
+                            const h = +rect.attr('height');
+                            const cx = x - 8;
+                            const cy = y + (h / 2);
+
+                            // Create dot with animation
+                            const dot = dotGroup.append('circle')
+                             .attr('class', 'hl-dot')
+                             .attr('cx', cx)
+                             .attr('cy', cy)
+                             .attr('r', 0)  // Start with radius 0
+                             .attr('fill', '#ef476f')
+                             .attr('stroke', 'white')
+                             .attr('stroke-width', '1.5');
+
+                            // Animate the dot
+                            dot.transition()
+                              .duration(500)
+                              .attr('r', 5);
+                        }
+                    }
                 }
-            }
-        }
-        else {
-            // === termId == 100 => точка в самом конце последнего path ===
+                else {
+                    // === termId == 100 => точка в самом конце последнего path ===
+                    const topG = d3.select(svgDoc).select('g[transform]');
+                    if (topG.empty()) {
+                        console.error("Couldn't find top <g transform='...'> for id=100");
+                        return;
+                    }
 
-            // 1) Ищем верхний контейнер <g transform="translate(.5 .5)">
-            //    (или другой, где лежат основные группы/пути)
-            const topG = d3.select(svgDoc).select('g[transform]');
-            if (topG.empty()) {
-                console.log("Не нашли верхний <g transform='...'> для id=100");
-                return;
-            }
+                    const children = topG.node().children;
+                    let lastPathNode = null;
 
-            // 2) Берём все дочерние DOM-узлы topG.node().children
-            //    Ищем последний, у которого tagName === 'path'
-            const children = topG.node().children; // HTMLCollection
-            let lastPathNode = null;
+                    for (let i = children.length - 1; i >= 0; i--) {
+                        if (children[i].tagName.toLowerCase() === 'path') {
+                            lastPathNode = children[i];
+                            break;
+                        }
+                    }
 
-            // Идём с конца к началу, чтобы найти последний path
-            for (let i = children.length - 1; i >= 0; i--) {
-                if (children[i].tagName.toLowerCase() === 'path') {
-                    lastPathNode = children[i];
-                    break;
+                    if (!lastPathNode) {
+                        console.error("No <path> found in top-level <g>");
+                        return;
+                    }
+
+                    const pathEl = lastPathNode;
+                    const pathLength = pathEl.getTotalLength();
+                    const finalPoint = pathEl.getPointAtLength(pathLength);
+
+                    // Create dot with animation
+                    const dot = dotGroup.append('circle')
+                      .attr('class', 'hl-dot')
+                      .attr('cx', finalPoint.x-10)
+                      .attr('cy', finalPoint.y-10)
+                      .attr('r', 0)  // Start with radius 0
+                      .attr('fill', '#ef476f')
+                      .attr('stroke', 'white')
+                      .attr('stroke-width', '1.5');
+
+                    // Animate the dot
+                    dot.transition()
+                      .duration(500)
+                      .attr('r', 5);
                 }
-            }
-
-            if (!lastPathNode) {
-                console.log("Не нашли никакого <path> внутри top-level <g>, ничего не рисуем.");
-                return;
-            }
-
-            // 3) Получаем длину пути и координаты в конце
-            const pathEl = lastPathNode; // DOM-узел
-            const pathLength = pathEl.getTotalLength();
-            const finalPoint = pathEl.getPointAtLength(pathLength);
-
-            // 4) Рисуем кружок в координатах finalPoint.x, finalPoint.y
-            //    Можно рисовать прямо в topG или в <svg> - выбор за вами
-            d3.select(pathEl.parentNode) // Чтобы поместить рядом
-              .append('circle')
-              .attr('class', 'hl-dot')
-              .attr('cx', finalPoint.x-10)
-              .attr('cy', finalPoint.y-10)
-              .attr('r', 4)
-              .attr('fill', 'red');
+            });
         }
-    });
-}
-
-
     </script>
 </body>
 </html>

@@ -122,6 +122,6 @@ def generate_svg_from_regex(regex, output_file="static/diagrams/diagram.svg"):
 
 
 # Пример использования
-regex = "{a|b{abc|aghl}}abc|ab[abc]"
-ids = generate_svg_from_regex(regex)
-print(ids)
+# regex = "{a|b{abc|aghl}}abc|ab[abc]"
+# ids = generate_svg_from_regex(regex)
+# print(ids)
