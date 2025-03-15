@@ -1,4 +1,4 @@
-from railroad import Diagram, Choice, Sequence, Optional, ZeroOrMore, Terminal, get_terminal_ids
+from railroad1 import Diagram, Choice, Sequence, Optional, ZeroOrMore, Terminal
 
 
 class Token:
@@ -110,18 +110,13 @@ def parse_tokens(tokens):
             return Sequence(*current)
 
 
-def generate_svg_from_regex(regex, output_file="static/diagrams/diagram.svg"):
+def generate_svg_from_regex(regex, output_file="static/diagrams/diagram1.svg"):
     """Генерация SVG-файла с railroad diagram на основе регулярного выражения."""
     tokens = tokenize(regex)
-    print(parse_tokens(tokens))
     diagram = Diagram(parse_tokens(tokens))
     with open(output_file, "w") as f:
         diagram.writeStandalone(f.write)
-    print(f"SVG файл сохранен как {output_file}")
-    return get_terminal_ids(diagram)
 
 
-# Пример использования
 regex = "[a[a|bcg]]ac"
-ids = generate_svg_from_regex(regex)
-print(ids)
+generate_svg_from_regex(regex)

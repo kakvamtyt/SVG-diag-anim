@@ -12,7 +12,6 @@ class ExpressionParser:
         self.list_id = list_id
         self.add_dot()
         self.update_comas()
-        print(self.expression)
 
     def add_dot(self):
         """
@@ -220,7 +219,6 @@ class ExpressionParser:
         return self.expression
 
     def get_ids(self):
-        print(self.expression)
         needed_ids = []
         i = 0
         y = 0
@@ -249,5 +247,5 @@ class ExpressionParser:
 
 
 if __name__ == '__main__':
-    parser = ExpressionParser("{a{abc}|b{abc|aghl}}abc|ab[abc]",
+    parser = ExpressionParser("abc",
                               [18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38])

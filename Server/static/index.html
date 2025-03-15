@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8"/>
     <title>Regex Diagram Visualizer</title>
@@ -124,7 +124,7 @@
             margin-left: 0.5rem;
         }
 
-        /* Две колонки */
+        /* Two columns */
         .two-columns {
             display: grid;
             grid-template-columns: 2fr 1fr;
@@ -138,16 +138,16 @@
             }
         }
 
-        /* Диаграмма */
+        /* Diagram */
         #diagramObject {
             width: 100%;
-            /* ограничим высоту, чтобы не растягивалось */
+            /* limit height to avoid stretching */
             max-height: 400px;
             border: 1px solid #ddd;
             border-radius: var(--radius);
         }
 
-        /* Кнопки переходов */
+        /* Transition buttons */
         .transition-symbol-btn {
             background-color: var(--light);
             color: var(--dark);
@@ -170,7 +170,7 @@
             border-color: var(--primary);
         }
 
-        /* Лог состояний */
+        /* State log */
         #states-log {
             background-color: #f8f9fa;
             border: 1px solid #ddd;
@@ -183,7 +183,7 @@
             overflow-x: auto;
         }
 
-        /* Прочие мелочи */
+        /* Miscellaneous */
         .status-panel {
             display: flex;
             align-items: center;
@@ -209,10 +209,10 @@
 </head>
 <body>
 <header>
-    <h1>Regex Diagram Visualizer</h1>
+    <h1>Relationship between regex and FA </h1>
 </header>
 <div class="container">
-    <!-- Панель ввода регулярки -->
+    <!-- Regex Input Panel -->
     <div class="card">
         <div class="card-header">Control Panel</div>
         <div class="card-body">
@@ -228,7 +228,7 @@
     </div>
 
     <div class="two-columns">
-        <!-- Левая колонка: диаграмма -->
+        <!-- Left Column: Diagram -->
         <div>
             <div class="card">
                 <div class="card-header">Diagram</div>
@@ -238,7 +238,7 @@
             </div>
         </div>
 
-        <!-- Правая колонка: переходы + кнопка Back + лог -->
+        <!-- Right Column: Transitions + Back button + State Log -->
         <div>
             <div id="transition-card" class="card" style="display:none;">
                 <div class="card-header">
@@ -247,11 +247,11 @@
                 </div>
                 <div class="card-body">
                     <div id="transition-buttons" style="margin-bottom: 1rem;">
-                        <!-- Кнопки символов переходов -->
+                        <!-- Transition symbol buttons -->
                     </div>
                     <button id="back-btn" disabled>Back</button>
 
-                    <!-- Лог состояний под кнопками -->
+                    <!-- State log below the buttons -->
                     <div id="states-log" style="display:none;"></div>
                 </div>
             </div>
@@ -259,29 +259,29 @@
     </div>
 </div>
 
-<!-- d3 для рисования точек -->
+<!-- d3 for drawing dots -->
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
-    // ================== Глобальные переменные (клиент) ===================
-    let svgDoc = null;          // Документ SVG после загрузки <object>
-    let currentNeededIds = [];  // Массив ID для выделения точками
-    let currentRegex = "";      // Текущее (обновлённое) выражение
-    let initialExpr = "";       // Исходная регулярка (до любых переходов)
+    // ================== Global Variables (Client) ===================
+    let svgDoc = null;          // SVG document after <object> load
+    let currentNeededIds = [];  // Array of IDs to be highlighted
+    let currentRegex = "";      // Current (updated) regex expression
+    let initialExpr = "";       // Initial regex (before any transitions)
 
-    // Храним переходы в виде:
+    // Store transitions as:
     // transitions = [
     //   { fromExpr: "...", symbol: "a", toExpr: "..." },
     //   ...
     // ]
     let transitions = [];
 
-    // knownStates = { [expr]: stateName }, например { "(abc)": "q0", "(a.bc)": "q1" }
+    // knownStates = { [expr]: stateName }, e.g. { "(abc)": "q0", "(a.bc)": "q1" }
     let knownStates = {};
     let stateCounter = 0;
 
-    // ================== Функции для UI ===================
+    // ================== UI Functions ===================
 
-    // Получить или создать имя состояния для данного expr
+    // Get or create a state name for the given expr
     function getOrCreateStateName(expr) {
         if (knownStates[expr] !== undefined) {
             return knownStates[expr];
@@ -293,23 +293,23 @@
         }
     }
 
-    // Перестраиваем лог состояний в формате:
+    // Rebuild the state log in the format:
     //   q0 - (abc)
     //   (q0, 'a') -> q1
     //   q1 - (a.bc)
     //   ...
     function rebuildLog() {
-        // Сбрасываем словарь состояний
+        // Reset state dictionary
         knownStates = {};
         stateCounter = 0;
 
         let lines = [];
 
-        // 1) Начальное состояние
+        // 1) Initial state
         const q0 = getOrCreateStateName(initialExpr);
         lines.push(`${q0} - ${initialExpr}`);
 
-        // 2) Идём по transitions
+        // 2) Iterate over transitions
         let fromExpr = initialExpr;
         for (let t of transitions) {
             const fromState = getOrCreateStateName(t.fromExpr);
@@ -318,8 +318,8 @@
             // (q0, 'a') -> q1
             lines.push(`(${fromState}, '${t.symbol}') -> ${toState}`);
 
-            // Если toState мы только что создали => печатаем "q1 - (a.bc)"
-            // Проверим, был ли он реально новым
+            // If toState was just created, print "q1 - (a.bc)"
+            // Check if it was really new
             if (stateCounter - 1 === parseInt(toState.substring(1))) {
                 lines.push(`${toState} - ${t.toExpr}`);
             }
@@ -332,13 +332,13 @@
             logEl.textContent = lines.join("\n");
             logEl.style.display = 'block';
         } else {
-            // Если вдруг нет строк, скрываем лог
+            // If there are no lines, hide the log
             logEl.textContent = "";
             logEl.style.display = 'none';
         }
     }
 
-    // Обновляем кнопки символов перехода
+    // Update the transition symbol buttons
     function updateTransitionButtons(symbols) {
         const container = document.getElementById('transition-buttons');
         container.innerHTML = "";
@@ -361,7 +361,7 @@
         });
     }
 
-    // Перерисовываем точки (highlight) в диаграмме
+    // Redraw highlights on the diagram
     function redrawHighlights() {
         if (!svgDoc) return;
 
@@ -401,7 +401,7 @@
                     }
                 }
             } else {
-                // termId == 100 => точка в самом конце
+                // termId == 100 => dot at the very end
                 const topG = d3.select(svgDoc).select('g[transform]');
                 if (topG.empty()) return;
                 const children = topG.node().children;
@@ -432,9 +432,9 @@
         });
     }
 
-    // ================== Обработчики ===================
+    // ================== Event Handlers ===================
 
-    // Генерация диаграммы
+    // Generate diagram
     document.getElementById('generate-btn').addEventListener('click', async () => {
         const regexValue = document.getElementById('regex-input').value.trim();
         if (!regexValue) {
@@ -455,14 +455,14 @@
             if (!resp.ok) throw new Error("Server error");
 
             const data = await resp.json();
-            // Сохраняем
+            // Save
             initialExpr = regexValue;
             currentRegex = regexValue;
             transitions = [];
 
             currentNeededIds = data.highlight_ids || [];
 
-            // Обновляем UI
+            // Update UI
             document.getElementById('current-regex').textContent = currentRegex;
             document.getElementById('status-panel').style.display = 'flex';
             const tCard = document.getElementById('transition-card');
@@ -471,7 +471,7 @@
             updateTransitionButtons(data.available_symbols || []);
             rebuildLog();
 
-            // Диаграмма
+            // Diagram
             const diagObj = document.getElementById('diagramObject');
             diagObj.style.display = 'block';
             diagObj.data = data.diagram_url;
@@ -481,7 +481,7 @@
                 redrawHighlights();
             });
 
-            // Кнопка Back
+            // Back button
             document.getElementById('back-btn').disabled = true;
         } catch (err) {
             console.error(err);
@@ -492,7 +492,7 @@
         }
     });
 
-    // Клик по символу
+    // Symbol click handler
     async function onSymbolClick(symbol) {
         try {
             const resp = await fetch('/generate-transition', {
@@ -506,7 +506,7 @@
             const newRegex = data.updated_regex || "";
             currentNeededIds = data.highlight_ids || [];
 
-            // Запоминаем переход
+            // Record the transition
             transitions.push({
                 fromExpr: currentRegex,
                 symbol: symbol,
@@ -520,7 +520,7 @@
             rebuildLog();
             redrawHighlights();
 
-            // Разблокировать "Back", раз есть переходы
+            // Enable Back if transitions exist
             document.getElementById('back-btn').disabled = (transitions.length === 0);
         } catch (err) {
             console.error(err);
@@ -528,7 +528,7 @@
         }
     }
 
-    // Кнопка Back
+    // Back button handler
     document.getElementById('back-btn').addEventListener('click', async () => {
         if (!transitions.length) return;
         const backBtn = document.getElementById('back-btn');
@@ -546,16 +546,16 @@
             currentRegex = data.updated_regex || "";
             currentNeededIds = data.highlight_ids || [];
 
-            // Убираем последний переход
+            // Remove last transition
             transitions.pop();
 
-            // Обновляем UI
+            // Update UI
             document.getElementById('current-regex').textContent = currentRegex;
             updateTransitionButtons(data.available_symbols || []);
             rebuildLog();
             redrawHighlights();
 
-            // Если после удаления нет переходов, снова дизейблим Back
+            // Disable Back if no transitions remain
             backBtn.disabled = (transitions.length === 0);
         } catch (err) {
             console.error(err);
